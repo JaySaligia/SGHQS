@@ -1,0 +1,14 @@
+python train.py --dataset  './dataset/pyg_data/icdm2022_session1.pt' \
+              --h-dim 10 \
+              --n-bases 8 \
+              --n-layers 2 \
+              --fanout 50 \
+              --n-epoch 3 \
+              --early_stopping 1 \
+              --validation True \
+              --lr 0.01 \
+              --batch-size 1000 \
+              --model-id 'test' \
+              --device-id 6\
+              --model 'RGCN'\
+              --optimizer 'Adam'
