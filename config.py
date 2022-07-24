@@ -2,7 +2,7 @@ import argparse
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--dataset', type=str, default='./dataset/pyg_data/icdm2022_session1.pt')
-parser.add_argument('--store_path', type=str, default='./best_model/{}.pthls')
+parser.add_argument('--store_path', type=str, default='./best_model/{}.pth')
 parser.add_argument('--labeled-class', type=str, default='item')
 parser.add_argument('--batch-size', type=int, default=128,
                     help='Mini-batch size. If -1, use full graph training.')

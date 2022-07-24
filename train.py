@@ -14,7 +14,7 @@ import numpy as np
 print('-----Loading -----')
 os.environ["CUDA_VISIBLE_DEVICES"] = args.device_id
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-hgraph = torch.load(args.dataset)
+hgraph = torch.load(args.dataset).to(device)
 labeled_class = args.labeled_class
 num_relations = len(hgraph.edge_types)
 
@@ -49,6 +49,7 @@ if args.inference:
 else:
     model = {
         'RGCN': lambda: RGCN(in_channels=args.in_dim, hidden_channels=args.h_dim, out_channels=2, num_relations=num_relations, n_layers=args.n_layers),
+        'HGT': lambda: HGT(hidden_channels=args.h_dim, out_channels=2, num_heads=8, num_layers=args.n_layers, hgraph=hgraph, labeled_class=labeled_class),
     }[args.model]()
     model.to(device)
 
@@ -71,16 +72,20 @@ def train(epoch):
         batch_size = batch[labeled_class].batch_size
         y = batch[labeled_class].y[:batch_size].to(device)
 
-        start = 0
-        for ntype in batch.node_types:
-            if ntype == labeled_class:
-                break
-            start += batch[ntype].num_nodes
+        if args.model == 'RGCN':
+            start = 0
+            for ntype in batch.node_types:
+                if ntype == labeled_class:
+                    break
+                start += batch[ntype].num_nodes
 
-        batch = batch.to_homogeneous()
+            batch = batch.to_homogeneous()
+            y_hat = model(batch.x.to(device), batch.edge_index.to(device), batch.edge_type.to(device))[
+                    start:start + batch_size]
+        else:
+            out = model(batch.x_dict, batch.edge_index_dict)[0:batch_size]
+            y_hat = out  # [labeled_class]
 
-        y_hat = model(batch.x.to(device), batch.edge_index.to(device), batch.edge_type.to(device))[
-                start:start + batch_size]
         loss = F.cross_entropy(y_hat, y)
         loss.backward()
         optimizer.step()
@@ -107,16 +112,19 @@ def val():
     for batch in val_loader:
         batch_size = batch[labeled_class].batch_size
         y = batch[labeled_class].y[:batch_size].to(device)
-        start = 0
-        for ntype in batch.node_types:
-            if ntype == labeled_class:
-                break
-            start += batch[ntype].num_nodes
+        if args.model == 'RGCN':
+            start = 0
+            for ntype in batch.node_types:
+                if ntype == labeled_class:
+                    break
+                start += batch[ntype].num_nodes
 
-        batch = batch.to_homogeneous()
+            batch = batch.to_homogeneous()
 
-        y_hat = model(batch.x.to(device), batch.edge_index.to(device), batch.edge_type.to(device))[
-                start:start + batch_size]
+            y_hat = model(batch.x.to(device), batch.edge_index.to(device), batch.edge_type.to(device))[
+                    start:start + batch_size]
+        else:
+            y_hat = model(batch.x_dict, batch.edge_index_dict)[0:batch_size]
         loss = F.cross_entropy(y_hat, y)
         y_pred.append(F.softmax(y_hat, dim=1)[:, 1].detach().cpu())
         y_true.append(y.cpu())
@@ -138,15 +146,18 @@ def test():
     y_pred = []
     for batch in test_loader:
         batch_size = batch[labeled_class].batch_size
-        start = 0
-        for ntype in batch.node_types:
-            if ntype == labeled_class:
-                break
-            start += batch[ntype].num_nodes
+        if args.model == 'RGCN':
+            start = 0
+            for ntype in batch.node_types:
+                if ntype == labeled_class:
+                    break
+                start += batch[ntype].num_nodes
 
-        batch = batch.to_homogeneous()
-        y_hat = model(batch.x.to(device), batch.edge_index.to(device), batch.edge_type.to(device))[
-                start:start + batch_size]
+            batch = batch.to_homogeneous()
+            y_hat = model(batch.x.to(device), batch.edge_index.to(device), batch.edge_type.to(device))[
+                    start:start + batch_size]
+        else:
+            y_hat = model(batch.x_dict, batch.edge_index_dict)[0:batch_size]
         pbar.update(batch_size)
         y_pred.append(F.softmax(y_hat, dim=1)[:, 1].detach().cpu())
     pbar.close()
