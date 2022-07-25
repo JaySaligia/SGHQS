@@ -19,7 +19,7 @@ parser.add_argument('--n-bases', type=int, default=8,
 parser.add_argument('--validation', type=bool, default=False)
 parser.add_argument('--early_stopping', type=int, default=10)
 parser.add_argument('--n-epoch', type=int, default=1)
-parser.add_argument('--test-file', type=str, default='/home/icdm/icdm2022_large/test_session1_ids.csv')
+parser.add_argument('--test-file', type=str, default='./dataset/dgl_data/icdm2022_session1/icdm2022_session1_test_ids.csv')
 parser.add_argument('--json-file', type=str, default='pyg_pred.json')
 parser.add_argument('--inference', type=bool, default=False)
 # parser.add_argument('--record-file', type=str, default='record.txt')

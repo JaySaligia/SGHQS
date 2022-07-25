@@ -1,12 +1,127 @@
 import torch
 import torch.nn.functional as F
 
-from torch_geometric.nn import RGCNConv, HGTConv, Linear
+from torch_geometric.nn import RGCNConv, HGTConv, Linear, FastRGCNConv, GCNConv, ChebConv, SAGEConv, GraphConv, \
+    GravNetConv, ResGatedGraphConv
 from config import *
 
 
+class GatedGraphGCN(torch.nn.Module):
+    def __init__(self, in_channels, hidden_channels, out_channels, num_relations, n_layers=3):
+        super().__init__()
+        self.convs = torch.nn.ModuleList()
+        self.relu = F.relu
+        self.convs.append(ResGatedGraphConv(in_channels=in_channels, out_channels=hidden_channels))
+        for i in range(n_layers - 2):
+            self.convs.append(ResGatedGraphConv(in_channels=hidden_channels, out_channels=hidden_channels))
+        self.convs.append(ResGatedGraphConv(in_channels=hidden_channels, out_channels=out_channels))
+
+    def forward(self, x, edge_index, edge_type):
+        for i, conv in enumerate(self.convs):
+            x = conv(x, edge_index)
+            if i < len(self.convs) - 1:
+                x = x.relu_()
+                x = F.dropout(x, p=0.4, training=self.training)
+        return x
+
+
+class GraphGCN(torch.nn.Module):
+    def __init__(self, in_channels, hidden_channels, out_channels, num_relations, n_layers=3):
+        super().__init__()
+        self.convs = torch.nn.ModuleList()
+        self.relu = F.relu
+        self.convs.append(GraphConv(in_channels=in_channels, out_channels=hidden_channels))
+        for i in range(n_layers - 2):
+            self.convs.append(GraphConv(in_channels=hidden_channels, out_channels=hidden_channels))
+        self.convs.append(GraphConv(in_channels=hidden_channels, out_channels=out_channels))
+
+    def forward(self, x, edge_index, edge_type):
+        for i, conv in enumerate(self.convs):
+            x = conv(x, edge_index)
+            if i < len(self.convs) - 1:
+                x = x.relu_()
+                x = F.dropout(x, p=0.4, training=self.training)
+        return x
+
+
+class SAGEGCN(torch.nn.Module):
+    def __init__(self, in_channels, hidden_channels, out_channels, num_relations, n_layers=3):
+        super().__init__()
+        self.convs = torch.nn.ModuleList()
+        self.relu = F.relu
+        self.convs.append(SAGEConv(in_channels=in_channels, out_channels=hidden_channels))
+        for i in range(n_layers - 2):
+            self.convs.append(SAGEConv(in_channels=hidden_channels, out_channels=hidden_channels))
+        self.convs.append(SAGEConv(in_channels=hidden_channels, out_channels=out_channels))
+
+    def forward(self, x, edge_index, edge_type):
+        for i, conv in enumerate(self.convs):
+            x = conv(x, edge_index)
+            if i < len(self.convs) - 1:
+                x = x.relu_()
+                x = F.dropout(x, p=0.4, training=self.training)
+        return x
+
+
+class ChebGCN(torch.nn.Module):
+    def __init__(self, in_channels, hidden_channels, out_channels, num_relations, n_layers=3):
+        super().__init__()
+        self.convs = torch.nn.ModuleList()
+        self.relu = F.relu
+        self.convs.append(ChebConv(in_channels=in_channels, out_channels=hidden_channels, K=2))
+        for i in range(n_layers - 2):
+            self.convs.append(ChebConv(in_channels=hidden_channels, out_channels=hidden_channels, K=2))
+        self.convs.append(ChebConv(in_channels=hidden_channels, out_channels=out_channels, K=2))
+
+    def forward(self, x, edge_index, edge_type):
+        for i, conv in enumerate(self.convs):
+            x = conv(x, edge_index)
+            if i < len(self.convs) - 1:
+                x = x.relu_()
+                x = F.dropout(x, p=0.4, training=self.training)
+        return x
+
+
+class GCN(torch.nn.Module):
+    def __init__(self, in_channels, hidden_channels, out_channels, num_relations, n_layers=3):
+        super().__init__()
+        self.convs = torch.nn.ModuleList()
+        self.relu = F.relu
+        self.convs.append(GCNConv(in_channels=in_channels, out_channels=hidden_channels))
+        for i in range(n_layers - 2):
+            self.convs.append(GCNConv(in_channels=hidden_channels, out_channels=hidden_channels))
+        self.convs.append(GCNConv(in_channels=hidden_channels, out_channels=out_channels))
+
+    def forward(self, x, edge_index, edge_type):
+        for i, conv in enumerate(self.convs):
+            x = conv(x, edge_index)
+            if i < len(self.convs) - 1:
+                x = x.relu_()
+                x = F.dropout(x, p=0.4, training=self.training)
+        return x
+
+
+class FASTRGCN(torch.nn.Module):
+    def __init__(self, in_channels, hidden_channels, out_channels, num_relations, n_layers=3):
+        super().__init__()
+        self.convs = torch.nn.ModuleList()
+        self.relu = F.relu
+        self.convs.append(FastRGCNConv(in_channels, hidden_channels, num_relations, num_bases=args.n_bases))
+        for i in range(n_layers - 2):
+            self.convs.append(FastRGCNConv(hidden_channels, hidden_channels, num_relations, num_bases=args.n_bases))
+        self.convs.append(FastRGCNConv(hidden_channels, out_channels, num_relations, num_bases=args.n_bases))
+
+    def forward(self, x, edge_index, edge_type):
+        for i, conv in enumerate(self.convs):
+            x = conv(x, edge_index, edge_type)
+            if i < len(self.convs) - 1:
+                x = x.relu_()
+                x = F.dropout(x, p=0.4, training=self.training)
+        return x
+
+
 class RGCN(torch.nn.Module):
-    def __init__(self, in_channels, hidden_channels, out_channels, num_relations, n_layers=2):
+    def __init__(self, in_channels, hidden_channels, out_channels, num_relations, n_layers=3):
         super().__init__()
         self.convs = torch.nn.ModuleList()
         self.relu = F.relu

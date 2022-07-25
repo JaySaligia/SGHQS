@@ -14,9 +14,17 @@ import numpy as np
 print('-----Loading -----')
 os.environ["CUDA_VISIBLE_DEVICES"] = args.device_id
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-hgraph = torch.load(args.dataset).to(device)
+hgraph = torch.load(args.dataset)
 labeled_class = args.labeled_class
 num_relations = len(hgraph.edge_types)
+flag = 0
+homo = ['RGCN', 'FASTRGCN', 'GCN', 'ChebGCN', 'SAGEGCN', 'GraphGCN', 'GatedGraphGCN']
+
+if args.model in homo:
+    flag = 0
+elif args.model == 'HGT':
+    flag = 1
+    hgraph.to(device)
 
 if not args.inference:
     train_idx = hgraph[labeled_class].pop('train_idx')
@@ -50,6 +58,12 @@ else:
     model = {
         'RGCN': lambda: RGCN(in_channels=args.in_dim, hidden_channels=args.h_dim, out_channels=2, num_relations=num_relations, n_layers=args.n_layers),
         'HGT': lambda: HGT(hidden_channels=args.h_dim, out_channels=2, num_heads=8, num_layers=args.n_layers, hgraph=hgraph, labeled_class=labeled_class),
+        'FASTRGCN': lambda: FASTRGCN(in_channels=args.in_dim, hidden_channels=args.h_dim, out_channels=2, num_relations=num_relations, n_layers=args.n_layers),
+        'GCN': lambda: GCN(in_channels=args.in_dim, hidden_channels=args.h_dim, out_channels=2, num_relations=num_relations, n_layers=args.n_layers),
+        'ChebGCN': lambda: ChebGCN(in_channels=args.in_dim, hidden_channels=args.h_dim, out_channels=2, num_relations=num_relations, n_layers=args.n_layers),
+        'SAGEGCN': lambda: SAGEGCN(in_channels=args.in_dim, hidden_channels=args.h_dim, out_channels=2, num_relations=num_relations, n_layers=args.n_layers),
+        'GraphGCN': lambda: GraphGCN(in_channels=args.in_dim, hidden_channels=args.h_dim, out_channels=2, num_relations=num_relations, n_layers=args.n_layers),
+        'GatedGraphGCN': lambda: GatedGraphGCN(in_channels=args.in_dim, hidden_channels=args.h_dim, out_channels=2, num_relations=num_relations, n_layers=args.n_layers),
     }[args.model]()
     model.to(device)
 
@@ -72,7 +86,7 @@ def train(epoch):
         batch_size = batch[labeled_class].batch_size
         y = batch[labeled_class].y[:batch_size].to(device)
 
-        if args.model == 'RGCN':
+        if flag == 0:
             start = 0
             for ntype in batch.node_types:
                 if ntype == labeled_class:
@@ -112,7 +126,7 @@ def val():
     for batch in val_loader:
         batch_size = batch[labeled_class].batch_size
         y = batch[labeled_class].y[:batch_size].to(device)
-        if args.model == 'RGCN':
+        if flag == 0:
             start = 0
             for ntype in batch.node_types:
                 if ntype == labeled_class:
@@ -146,7 +160,7 @@ def test():
     y_pred = []
     for batch in test_loader:
         batch_size = batch[labeled_class].batch_size
-        if args.model == 'RGCN':
+        if flag == 0:
             start = 0
             for ntype in batch.node_types:
                 if ntype == labeled_class:
@@ -170,16 +184,20 @@ if not args.inference:
     val_ap_list = []
     ave_val_ap = 0
     end = 0
+    best_ap = 0
     for epoch in range(1, args.n_epoch + 1):
         train_loss, train_acc, train_ap = train(epoch)
         print(f'Train: Epoch {epoch:02d}, Loss: {train_loss:.4f}, Acc: {train_acc:.4f}, AP_Score: {train_ap:.4f}')
         if args.validation and epoch >= args.early_stopping:
             val_loss, val_acc, val_ap = val()
-            print(f'Val: Epoch: {epoch:02d}, Loss: {val_loss:.4f}, Acc: {val_acc:.4f}, AP_Score: {val_ap:.4f}')
-            if val_ap <= ave_val_ap:
+            if val_ap > best_ap:
+                best_ap = val_ap
+            print(f'Val: Epoch: {epoch:02d}, Loss: {val_loss:.4f}, Acc: {val_acc:.4f}, AP_Score: {val_ap:.4f}, Best AP: {best_ap: .4f}')
+            if val_ap <= ave_val_ap * 0.95:
                 print("Early Stopping")
                 break
-            torch.save(model, args.store_path.format(args.model))
+            if val_ap > best_ap:
+                torch.save(model, args.store_path.format(args.model))
             val_ap_list.append(float(val_ap))
             ave_val_ap = np.average(val_ap_list)
             end = epoch
