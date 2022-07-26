@@ -2,8 +2,117 @@ import torch
 import torch.nn.functional as F
 
 from torch_geometric.nn import RGCNConv, HGTConv, Linear, FastRGCNConv, GCNConv, ChebConv, SAGEConv, GraphConv, \
-    GravNetConv, ResGatedGraphConv, GATConv
+    GravNetConv, ResGatedGraphConv, GATConv, GATv2Conv, TransformerConv, TAGConv, ARMAConv, SGConv, MFConv
 from config import *
+
+
+class MF(torch.nn.Module):
+    def __init__(self, in_channels, hidden_channels, out_channels, num_relations, n_layers=3):
+        super().__init__()
+        self.convs = torch.nn.ModuleList()
+        self.relu = F.relu
+        self.convs.append(MFConv(in_channels=in_channels, out_channels=hidden_channels))
+        for i in range(n_layers - 2):
+            self.convs.append(MFConv(in_channels=hidden_channels, out_channels=hidden_channels))
+        self.convs.append(MFConv(in_channels=hidden_channels, out_channels=out_channels))
+
+    def forward(self, x, edge_index, edge_type):
+        for i, conv in enumerate(self.convs):
+            x = conv(x, edge_index)
+            if i < len(self.convs) - 1:
+                x = x.relu_()
+                x = F.dropout(x, p=0.4, training=self.training)
+        return x
+
+
+class SG(torch.nn.Module):
+    def __init__(self, in_channels, hidden_channels, out_channels, num_relations, n_layers=3):
+        super().__init__()
+        self.convs = torch.nn.ModuleList()
+        self.relu = F.relu
+        self.convs.append(SGConv(in_channels=in_channels, out_channels=hidden_channels))
+        for i in range(n_layers - 2):
+            self.convs.append(SGConv(in_channels=hidden_channels, out_channels=hidden_channels))
+        self.convs.append(SGConv(in_channels=hidden_channels, out_channels=out_channels))
+
+    def forward(self, x, edge_index, edge_type):
+        for i, conv in enumerate(self.convs):
+            x = conv(x, edge_index)
+            if i < len(self.convs) - 1:
+                x = x.relu_()
+                x = F.dropout(x, p=0.4, training=self.training)
+        return x
+
+
+class ARMA(torch.nn.Module):
+    def __init__(self, in_channels, hidden_channels, out_channels, num_relations, n_layers=3):
+        super().__init__()
+        self.convs = torch.nn.ModuleList()
+        self.relu = F.relu
+        self.convs.append(ARMAConv(in_channels=in_channels, out_channels=hidden_channels))
+        for i in range(n_layers - 2):
+            self.convs.append(ARMAConv(in_channels=hidden_channels, out_channels=hidden_channels))
+        self.convs.append(ARMAConv(in_channels=hidden_channels, out_channels=out_channels))
+
+    def forward(self, x, edge_index, edge_type):
+        for i, conv in enumerate(self.convs):
+            x = conv(x, edge_index)
+            if i < len(self.convs) - 1:
+                x = x.relu_()
+                x = F.dropout(x, p=0.4, training=self.training)
+        return x
+
+
+class TAG(torch.nn.Module):
+    def __init__(self, in_channels, hidden_channels, out_channels, num_relations, n_layers=3):
+        super().__init__()
+        self.convs = torch.nn.ModuleList()
+        self.relu = F.relu
+        self.convs.append(TAGConv(in_channels=in_channels, out_channels=hidden_channels))
+        for i in range(n_layers - 2):
+            self.convs.append(TAGConv(in_channels=hidden_channels, out_channels=hidden_channels))
+        self.convs.append(TAGConv(in_channels=hidden_channels, out_channels=out_channels))
+
+    def forward(self, x, edge_index, edge_type):
+        for i, conv in enumerate(self.convs):
+            x = conv(x, edge_index)
+            if i < len(self.convs) - 1:
+                x = x.relu_()
+                x = F.dropout(x, p=0.4, training=self.training)
+        return x
+
+
+class Transformer(torch.nn.Module):
+    def __init__(self, in_channels, hidden_channels, out_channels, num_relations, n_layers=3):
+        super().__init__()
+        self.convs = torch.nn.ModuleList()
+        self.relu = F.relu
+        self.convs.append(TransformerConv(in_channels=in_channels, out_channels=hidden_channels, heads=1))
+        for i in range(n_layers - 2):
+            self.convs.append(TransformerConv(in_channels=hidden_channels, out_channels=hidden_channels, heads=1))
+        self.convs.append(TransformerConv(in_channels=hidden_channels, out_channels=out_channels, heads=1))
+
+    def forward(self, x, edge_index, edge_type):
+        for i, conv in enumerate(self.convs):
+            x = conv(x, edge_index)
+            if i < len(self.convs) - 1:
+                x = x.relu_()
+                x = F.dropout(x, p=0.4, training=self.training)
+        return x
+
+
+class GATv2(torch.nn.Module):
+    def __init__(self, in_channels, hidden_channels, out_channels, heads):
+        super().__init__()
+        self.conv1 = GATv2Conv(in_channels, hidden_channels, heads, dropout=0.6)
+        self.conv2 = GATv2Conv(hidden_channels * heads, out_channels, heads=1, concat=False, dropout=0.6)
+
+    def forward(self, x, edge_index, edge_type):
+        x = F.dropout(x, p=0.6, training=self.training)
+        x = F.elu(self.conv1(x, edge_index))
+        x = F.dropout(x, p=0.6, training=self.training)
+        x = self.conv2(x, edge_index)
+        return x
 
 
 class GAT(torch.nn.Module):
