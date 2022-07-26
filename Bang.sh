@@ -14,4 +14,6 @@ elif [ $1 = "GraphGCN" ]
 then echo "python train.py --dataset './dataset/pyg_data/icdm2022_session1.pt' --h-dim 256 --n-bases 8 --n-layers 3 --fanout 50 --n-epoch 100 --early_stopping 10 --validation True --lr 0.01 --batch-size 256 --model-id 'GraphGCN' --model 'GraphGCN' --optimizer 'Adam' --device-id 6"
 elif [ $1 = "GatedGraphGCN" ]
 then echo "python train.py --dataset './dataset/pyg_data/icdm2022_session1.pt' --h-dim 256 --n-bases 8 --n-layers 3 --fanout 50 --n-epoch 100 --early_stopping 10 --validation True --lr 0.01 --batch-size 256 --model-id 'GatedGraphGCN' --model 'GatedGraphGCN' --optimizer 'Adam' --device-id 6"
+elif [ $1 = "GAT" ]
+then echo "python train.py --dataset './dataset/pyg_data/icdm2022_session1.pt' --h-dim 8 --n-bases 8 --n-layers 3 --fanout 50 --n-epoch 100 --early_stopping 10 --validation True --lr 0.05 --batch-size 256 --model-id 'GAT' --model 'GAT' --optimizer 'Adam' --device-id '5'"
 fi

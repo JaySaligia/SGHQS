@@ -18,7 +18,7 @@ hgraph = torch.load(args.dataset)
 labeled_class = args.labeled_class
 num_relations = len(hgraph.edge_types)
 flag = 0
-homo = ['RGCN', 'FASTRGCN', 'GCN', 'ChebGCN', 'SAGEGCN', 'GraphGCN', 'GatedGraphGCN']
+homo = ['RGCN', 'FASTRGCN', 'GCN', 'ChebGCN', 'SAGEGCN', 'GraphGCN', 'GatedGraphGCN', 'GAT']
 
 if args.model in homo:
     flag = 0
@@ -56,19 +56,28 @@ if args.inference:
     model = torch.load(osp.join('best_model', args.model + ".pth"))
 else:
     model = {
-        'RGCN': lambda: RGCN(in_channels=args.in_dim, hidden_channels=args.h_dim, out_channels=2, num_relations=num_relations, n_layers=args.n_layers),
-        'HGT': lambda: HGT(hidden_channels=args.h_dim, out_channels=2, num_heads=8, num_layers=args.n_layers, hgraph=hgraph, labeled_class=labeled_class),
-        'FASTRGCN': lambda: FASTRGCN(in_channels=args.in_dim, hidden_channels=args.h_dim, out_channels=2, num_relations=num_relations, n_layers=args.n_layers),
-        'GCN': lambda: GCN(in_channels=args.in_dim, hidden_channels=args.h_dim, out_channels=2, num_relations=num_relations, n_layers=args.n_layers),
-        'ChebGCN': lambda: ChebGCN(in_channels=args.in_dim, hidden_channels=args.h_dim, out_channels=2, num_relations=num_relations, n_layers=args.n_layers),
-        'SAGEGCN': lambda: SAGEGCN(in_channels=args.in_dim, hidden_channels=args.h_dim, out_channels=2, num_relations=num_relations, n_layers=args.n_layers),
-        'GraphGCN': lambda: GraphGCN(in_channels=args.in_dim, hidden_channels=args.h_dim, out_channels=2, num_relations=num_relations, n_layers=args.n_layers),
-        'GatedGraphGCN': lambda: GatedGraphGCN(in_channels=args.in_dim, hidden_channels=args.h_dim, out_channels=2, num_relations=num_relations, n_layers=args.n_layers),
+        'RGCN': lambda: RGCN(in_channels=args.in_dim, hidden_channels=args.h_dim, out_channels=2,
+                             num_relations=num_relations, n_layers=args.n_layers),
+        'HGT': lambda: HGT(hidden_channels=args.h_dim, out_channels=2, num_heads=8, num_layers=args.n_layers,
+                           hgraph=hgraph, labeled_class=labeled_class),
+        'FASTRGCN': lambda: FASTRGCN(in_channels=args.in_dim, hidden_channels=args.h_dim, out_channels=2,
+                                     num_relations=num_relations, n_layers=args.n_layers),
+        'GCN': lambda: GCN(in_channels=args.in_dim, hidden_channels=args.h_dim, out_channels=2,
+                           num_relations=num_relations, n_layers=args.n_layers),
+        'ChebGCN': lambda: ChebGCN(in_channels=args.in_dim, hidden_channels=args.h_dim, out_channels=2,
+                                   num_relations=num_relations, n_layers=args.n_layers),
+        'SAGEGCN': lambda: SAGEGCN(in_channels=args.in_dim, hidden_channels=args.h_dim, out_channels=2,
+                                   num_relations=num_relations, n_layers=args.n_layers),
+        'GraphGCN': lambda: GraphGCN(in_channels=args.in_dim, hidden_channels=args.h_dim, out_channels=2,
+                                     num_relations=num_relations, n_layers=args.n_layers),
+        'GatedGraphGCN': lambda: GatedGraphGCN(in_channels=args.in_dim, hidden_channels=args.h_dim, out_channels=2,
+                                               num_relations=num_relations, n_layers=args.n_layers),
+        'GAT': lambda: GAT(in_channels=args.in_dim, hidden_channels=args.h_dim, out_channels=2, heads=8)
     }[args.model]()
     model.to(device)
 
     optimizer = {
-        'Adam': lambda: torch.optim.Adam(model.parameters(), lr=args.lr),
+        'Adam': lambda: torch.optim.Adam(model.parameters(), lr=args.lr, weight_decay=args.weight_decay),
     }[args.optimizer]()
 
 
@@ -190,14 +199,14 @@ if not args.inference:
         print(f'Train: Epoch {epoch:02d}, Loss: {train_loss:.4f}, Acc: {train_acc:.4f}, AP_Score: {train_ap:.4f}')
         if args.validation and epoch >= args.early_stopping:
             val_loss, val_acc, val_ap = val()
-            if val_ap > best_ap:
-                best_ap = val_ap
-            print(f'Val: Epoch: {epoch:02d}, Loss: {val_loss:.4f}, Acc: {val_acc:.4f}, AP_Score: {val_ap:.4f}, Best AP: {best_ap: .4f}')
             if val_ap <= ave_val_ap * 0.95:
                 print("Early Stopping")
                 break
             if val_ap > best_ap:
                 torch.save(model, args.store_path.format(args.model))
+                best_ap = val_ap
+            print(
+                f'Val: Epoch: {epoch:02d}, Loss: {val_loss:.4f}, Acc: {val_acc:.4f}, AP_Score: {val_ap:.4f}, Best AP: {best_ap: .4f}')
             val_ap_list.append(float(val_ap))
             ave_val_ap = np.average(val_ap_list)
             end = epoch
