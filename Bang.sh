@@ -30,4 +30,6 @@ elif [ $1 = "MF" ]
 then echo "python train.py --model-id 'MF' --model 'MF' --dataset './dataset/pyg_data/icdm2022_session1.pt' --h-dim 256 --n-bases 8 --n-layers 3 --fanout 50 --n-epoch 100 --early_stopping 10 --validation True --lr 0.01 --batch-size 256 --optimizer 'Adam' --device-id '6'"
 elif [ $1 = "EG" ]
 then echo "python train.py --model-id 'EG' --model 'EG' --dataset './dataset/pyg_data/icdm2022_session1.pt' --h-dim 256 --n-bases 8 --n-layers 3 --fanout 50 --n-epoch 100 --early_stopping 10 --validation True --lr 0.01 --batch-size 256 --optimizer 'Adam' --device-id '6'"
+elif [ $1 = "superGAT" ]
+then echo "python train.py --model-id 'superGAT' --model 'superGAT' --dataset './dataset/pyg_data/icdm2022_session1.pt' --h-dim 8 --n-bases 8 --n-layers 2 --fanout 50 --n-epoch 100 --early_stopping 10 --validation True --lr 0.05 --batch-size 256 --optimizer 'Adam' --device-id '5'"
 fi

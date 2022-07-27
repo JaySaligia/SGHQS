@@ -20,12 +20,15 @@ num_relations = len(hgraph.edge_types)
 flag = 0
 homo = ['RGCN', 'FASTRGCN', 'GCN', 'ChebGCN', 'SAGEGCN', 'GraphGCN', 'GatedGraphGCN', 'GAT', 'GATv2', 'Transformer',
         'TAG', 'ARMA', 'SG', 'MF', 'EG']
+peculiar = ['superGAT']
 
 if args.model in homo:
     flag = 0
 elif args.model == 'HGT':
     flag = 1
     hgraph.to(device)
+elif args.model in peculiar:
+    flag = 2
 
 if not args.inference:
     train_idx = hgraph[labeled_class].pop('train_idx')
@@ -87,6 +90,8 @@ else:
                          num_relations=num_relations, n_layers=args.n_layers),
         'EG': lambda: EG(in_channels=args.in_dim, hidden_channels=args.h_dim, out_channels=2,
                          num_relations=num_relations, n_layers=args.n_layers),
+
+        'superGAT': lambda: superGAT(in_channels=args.in_dim, hidden_channels=args.h_dim, out_channels=2, heads=8),
     }[args.model]()
     model.to(device)
 
@@ -119,11 +124,23 @@ def train(epoch):
             batch = batch.to_homogeneous()
             y_hat = model(batch.x.to(device), batch.edge_index.to(device), batch.edge_type.to(device))[
                     start:start + batch_size]
-        else:
+        elif flag == 1:
             out = model(batch.x_dict, batch.edge_index_dict)[0:batch_size]
             y_hat = out  # [labeled_class]
+        elif flag == 2:
+            start = 0
+            for ntype in batch.node_types:
+                if ntype == labeled_class:
+                    break
+                start += batch[ntype].num_nodes
+
+            batch = batch.to_homogeneous()
+            y_hat, att_loss = model(batch.x.to(device), batch.edge_index.to(device))
+            y_hat = y_hat[start:start + batch_size]
 
         loss = F.cross_entropy(y_hat, y)
+        if flag == 2:
+            loss += 4.0 * att_loss  # Attention Loss
         loss.backward()
         optimizer.step()
         y_pred.append(F.softmax(y_hat, dim=1)[:, 1].detach().cpu())
@@ -160,8 +177,17 @@ def val():
 
             y_hat = model(batch.x.to(device), batch.edge_index.to(device), batch.edge_type.to(device))[
                     start:start + batch_size]
-        else:
+        elif flag == 1:
             y_hat = model(batch.x_dict, batch.edge_index_dict)[0:batch_size]
+        elif flag == 2:
+            start = 0
+            for ntype in batch.node_types:
+                if ntype == labeled_class:
+                    break
+                start += batch[ntype].num_nodes
+
+            batch = batch.to_homogeneous()
+            y_hat = model(batch.x.to(device), batch.edge_index.to(device))[0][start:start + batch_size]
         loss = F.cross_entropy(y_hat, y)
         y_pred.append(F.softmax(y_hat, dim=1)[:, 1].detach().cpu())
         y_true.append(y.cpu())
@@ -193,8 +219,17 @@ def test():
             batch = batch.to_homogeneous()
             y_hat = model(batch.x.to(device), batch.edge_index.to(device), batch.edge_type.to(device))[
                     start:start + batch_size]
-        else:
+        elif flag == 1:
             y_hat = model(batch.x_dict, batch.edge_index_dict)[0:batch_size]
+        elif flag == 2:
+            start = 0
+            for ntype in batch.node_types:
+                if ntype == labeled_class:
+                    break
+                start += batch[ntype].num_nodes
+
+            batch = batch.to_homogeneous()
+            y_hat = model(batch.x.to(device), batch.edge_index.to(device))[0][start:start + batch_size]
         pbar.update(batch_size)
         y_pred.append(F.softmax(y_hat, dim=1)[:, 1].detach().cpu())
     pbar.close()

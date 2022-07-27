@@ -147,6 +147,27 @@ class GAT(torch.nn.Module):
         x = self.conv2(x, edge_index)
         return x
 
+class superGAT(torch.nn.Module):
+    def __init__(self, in_channels, hidden_channels, out_channels, heads):
+        super().__init__()
+
+        self.conv1 = SuperGATConv(in_channels, hidden_channels, heads=heads,
+                                  dropout=0.6, attention_type='MX',
+                                  edge_sample_ratio=0.8, is_undirected=True)
+        self.conv2 = SuperGATConv(hidden_channels * heads, out_channels, heads=heads,
+                                  concat=False, dropout=0.6,
+                                  attention_type='MX', edge_sample_ratio=0.8,
+                                  is_undirected=True)
+
+    def forward(self, x, edge_index):
+        x = F.dropout(x, p=0.6, training=self.training)
+        x = F.elu(self.conv1(x, edge_index))
+        att_loss = self.conv1.get_attention_loss()
+        x = F.dropout(x, p=0.6, training=self.training)
+        x = self.conv2(x, edge_index)  # TODO: homo_graph.edge_index.to(device) ???
+        att_loss += self.conv2.get_attention_loss()
+        return x, att_loss
+
 
 class GatedGraphGCN(torch.nn.Module):
     def __init__(self, in_channels, hidden_channels, out_channels, num_relations, n_layers=3):
