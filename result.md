@@ -8,12 +8,12 @@
 | Graph       | 92.32 |
 | ResGated    | 94.50 |
 | GAT         | 79.48 |
-| GATv2       |       |
-| Transformer |       |
-| TAG         |       |
-| ARMA        |       |
-| HGT         |       |
-| SG          |       |
-| MF          |       |
+| GATv2       | 79.02 |
+| Transformer | 91.70 |
+| TAG         | 91.61 |
+| ARMA        | 85.91 |
+| HGT         | 92.64 |
+| SG          | 90.25 |
+| MF          | 90.66 |
 
 
