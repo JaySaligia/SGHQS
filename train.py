@@ -19,7 +19,7 @@ labeled_class = args.labeled_class
 num_relations = len(hgraph.edge_types)
 flag = 0
 homo = ['RGCN', 'FASTRGCN', 'GCN', 'ChebGCN', 'SAGEGCN', 'GraphGCN', 'GatedGraphGCN', 'GAT', 'GATv2', 'Transformer',
-        'TAG', 'ARMA', 'SG', 'MF']
+        'TAG', 'ARMA', 'SG', 'MF', 'EG']
 
 if args.model in homo:
     flag = 0
@@ -84,6 +84,8 @@ else:
         'SG': lambda: SG(in_channels=args.in_dim, hidden_channels=args.h_dim, out_channels=2,
                          num_relations=num_relations, n_layers=args.n_layers),
         'MF': lambda: MF(in_channels=args.in_dim, hidden_channels=args.h_dim, out_channels=2,
+                         num_relations=num_relations, n_layers=args.n_layers),
+        'EG': lambda: EG(in_channels=args.in_dim, hidden_channels=args.h_dim, out_channels=2,
                          num_relations=num_relations, n_layers=args.n_layers),
     }[args.model]()
     model.to(device)

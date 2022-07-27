@@ -2,8 +2,27 @@ import torch
 import torch.nn.functional as F
 
 from torch_geometric.nn import RGCNConv, HGTConv, Linear, FastRGCNConv, GCNConv, ChebConv, SAGEConv, GraphConv, \
-    GravNetConv, ResGatedGraphConv, GATConv, GATv2Conv, TransformerConv, TAGConv, ARMAConv, SGConv, MFConv
+    GravNetConv, ResGatedGraphConv, GATConv, GATv2Conv, TransformerConv, TAGConv, ARMAConv, SGConv, MFConv, EGConv
 from config import *
+
+
+class EG(torch.nn.Module):
+    def __init__(self, in_channels, hidden_channels, out_channels, num_relations, n_layers=3):
+        super().__init__()
+        self.convs = torch.nn.ModuleList()
+        self.relu = F.relu
+        self.convs.append(EGConv(in_channels=in_channels, out_channels=hidden_channels))
+        for i in range(n_layers - 2):
+            self.convs.append(EGConv(in_channels=hidden_channels, out_channels=hidden_channels))
+        self.convs.append(EGConv(in_channels=hidden_channels, out_channels=out_channels, num_heads=1))
+
+    def forward(self, x, edge_index, edge_type):
+        for i, conv in enumerate(self.convs):
+            x = conv(x, edge_index)
+            if i < len(self.convs) - 1:
+                x = x.relu_()
+                x = F.dropout(x, p=0.4, training=self.training)
+        return x
 
 
 class MF(torch.nn.Module):
