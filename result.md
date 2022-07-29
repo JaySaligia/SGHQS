@@ -16,5 +16,5 @@
 | SG          | 90.25 |
 | MF          | 90.66 |
 | EG          | 92.26 |
-| SuperGAT    | TODO  |
+| SuperGAT    | 77.86 |
 
