@@ -18,3 +18,6 @@
 | EG          | 92.26 |
 | SuperGAT    | 77.86 |
 | HGT(loader) | 94.60 |
+| SAGE(Metapath) | 95.14 |
+| GAT(Metapath) | 90.41 |
+| ResGated(Metapath) | 95.29 |
