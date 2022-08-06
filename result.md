@@ -17,7 +17,10 @@
 | MF          | 90.66 |
 | EG          | 92.26 |
 | SuperGAT    | 77.86 |
+| RGAT        | 93.43 |
+| FILM        | 94.37 |
 | HGT(loader) | 94.60 |
-| SAGE(Metapath) | 95.14 |
-| GAT(Metapath) | 90.41 |
-| ResGated(Metapath) | 95.29 |
+| SAGE(edgetype) | 95.14 |
+| GAT(edgetype) | 90.41 |
+| ResGated(edgetype) | 95.58 |
+| RGCN(Flag)  | 95.47 (93.36 on test) |
