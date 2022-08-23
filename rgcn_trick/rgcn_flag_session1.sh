@@ -1,22 +1,41 @@
 # Parameters
 
 #######
-# Epoch 7
+# Epoch 7  (rgcn_flag_2)
+# Trick Flag
 # random seed 4399
 # score 0.933659
 #######
 
-model_id="rgcn_flag_3"
-gpu_id=5
+#######
+# Epoch 8  (rgcn_flag_4)
+# Trick Flag
+# random seed 4399
+# score 0.9341
+#######
+
+#######
+# Epoch 8
+# Trick Flag + PairNorm
+# random seed 4399
+# score 0.934026
+#######
+
+model_id="rgcn_flag_6"
+gpu_id=9
 icdm_sesison1_dir="/data/pengmiao/ICDM_dataset/icdm2022_session1_train/"
 ouput_result_dir="/data/pengmiao/workplace/pycharm/icdm_graph_competition/pyg_example/"
 pyg_data_session1="/data/pengmiao/ICDM_dataset/pyg_data/icdm2022_session1"
 test_ids_session1="/data/pengmiao/ICDM_dataset/icdm2022_session1_test_ids.txt"
 
+#ouput_result_dir="/data/pengmiao/workplace/pycharm/icdm_graph_competition/pyg_example/"
+#pyg_data_session1="/data/liuben/icdm_dataset/icdm2022_session1"
+#test_ids_session1="/data/pengmiao/ICDM_dataset/icdm2022_session1_test_ids.txt"
+
 # Model hyperparameters
 h_dim=256
 n_bases=8
-num_layers=3
+num_layers=2
 fanout=150  # 150
 n_epoch=100
 early_stopping=6
@@ -61,7 +80,7 @@ python rgcn_flag.py --dataset $pyg_data_session1".pt" \
 # Inference: session1 1. loading model $model_id 2. reading test_ids 3. generator .json file
 python rgcn_flag.py --dataset $pyg_data_session1".pt" \
         --test-file $test_ids_session1 \
-        --json-file $ouput_result_dir"pyg_pred_session1_12138.json" \
+        --json-file $ouput_result_dir"rgcn_flag_4399_epoch10_layer2.json" \
         --batch-size $batch_size \
         --n-layers $num_layers \
         --fanout $fanout \

@@ -8,11 +8,12 @@ import torch
 from torch import nn
 import torch.nn.functional as F
 import torch_geometric.transforms as T
+from torch_geometric.utils import dropout_adj
 from tqdm import tqdm
 import random
 
 from torch_geometric.loader import NeighborLoader
-from torch_geometric.nn import RGCNConv
+from torch_geometric.nn import RGCNConv, PairNorm
 from sklearn.metrics import average_precision_score
 from gtrick import FLAG
 
@@ -54,22 +55,12 @@ def setup_seed(seed):
     torch.backends.cudnn.deterministic = True
     torch.backends.cudnn.benchmark = False
 
-setup_seed(4399)
+setup_seed(4399)  # 4399
 
 os.environ["CUDA_VISIBLE_DEVICES"] = args.device_id
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 hgraph = torch.load(args.dataset)
 
-# use_gdc
-# print("Using GDC...")
-# transform = T.GDC(
-#     self_loop_weight=1,
-#     normalization_in='sym',
-#     normalization_out='col',
-#     diffusion_kwargs=dict(method='ppr', alpha=0.05),
-#     sparsification_kwargs=dict(method='topk', k=128, dim=0),
-#     exact=True,
-# )
 
 labeled_class = args.labeled_class
 
@@ -113,6 +104,10 @@ class RGCN(torch.nn.Module):
         super().__init__()
         self.convs = torch.nn.ModuleList()
         self.relu = F.relu
+
+        # Applies pair normalization over node features
+        self.pn = PairNorm()
+
         self.convs.append(RGCNConv(in_channels, hidden_channels, num_relations, num_bases=args.n_bases))
         for i in range(n_layers - 2):
             self.convs.append(RGCNConv(hidden_channels, hidden_channels, num_relations, num_bases=args.n_bases))
@@ -120,9 +115,17 @@ class RGCN(torch.nn.Module):
 
     # add a param perturb to pass perturb
     def forward(self, x, edge_index, edge_type, perturb=None):
+        # Randomly drops edges from the adjacency matrix with probability p using samples from a Bernoulli distribution.
+        # edge_index, _ = dropout_adj(edge_index, p=0.2,
+        #                             force_undirected=False,
+        #                             num_nodes=hgraph.num_nodes,
+        #                             training=self.training)
+
         # add perturb to x, note that do not use x += perturb
         if perturb is not None:
             x = x + perturb
+
+        # x = self.pn(x)
 
         for i, conv in enumerate(self.convs):
             x = conv(x, edge_index, edge_type)
@@ -257,7 +260,9 @@ if args.inference == False:
         print(f'Train: Epoch {epoch:02d}, Loss: {train_loss:.4f}, Acc: {train_acc:.4f}, AP_Score: {train_ap:.4f}')
         if args.validation and epoch >= args.early_stopping:
             val_loss, val_acc, val_ap = val()
-            if val_ap <= ave_val_ap:
+            # 保存中间模型
+            # torch.save(model, osp.join("models/", args.model_id + "_epoch_{}.pth".format(epoch)))
+            if val_ap <= ave_val_ap or epoch == 11:
                 print(
                     f'Val: Epoch: {epoch:02d}, Loss: {val_loss:.4f}, Acc: {val_acc:.4f}, AP_Score: {val_ap:.4f}, Best AP: {best_ap: .4f}')
                 print("Early Stopping")
@@ -285,7 +290,3 @@ if args.inference == True:
             y_dict["score"] = float(y_pred[i])
             json.dump(y_dict, f)
             f.write('\n')
-
-
-
-
