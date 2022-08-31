@@ -16,7 +16,7 @@ parser.add_argument('--in-dim', type=int, default=256,
                     help='number of hidden units')
 parser.add_argument('--n-bases', type=int, default=8,
                     help='number of filter weight matrices, default: -1 [use all]')
-parser.add_argument('--validation', type=bool, default=False)
+parser.add_argument('--validation', type=bool, default=True)
 parser.add_argument('--early_stopping', type=int, default=10)
 parser.add_argument('--n-epoch', type=int, default=1)
 parser.add_argument('--test-file', type=str, default='./dataset/dgl_data/icdm2022_session1/icdm2022_session1_test_ids.csv')
@@ -30,4 +30,9 @@ parser.add_argument('--device-id', type=str, default='0')
 
 parser.add_argument('--model', type=str, default='RGCN')
 parser.add_argument('--optimizer', type=str, default='Adam')
+# for gtrick
+# paras for Label Propagation
+parser.add_argument('--label_propagation', type=bool, default=False)
+parser.add_argument('--lp_layers', type=int, default=50)
+parser.add_argument('--lp_alpha', type=float, default=0.9)
 args = parser.parse_args()
