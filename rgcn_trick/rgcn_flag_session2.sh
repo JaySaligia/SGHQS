@@ -1,32 +1,17 @@
 # Parameters
 
-#######
-# Epoch 7  (rgcn_flag_2)
-# Trick Flag
-# random seed 4399
-# score 0.933659
-#######
 
-#######
-# Epoch 8  (rgcn_flag_4)
-# Trick Flag
-# random seed 4399
-# score 0.9341
-#######
-
-#######
-# Epoch 8
-# Trick Flag + PairNorm
-# random seed 4399
-# score 0.934026
-#######
-
-model_id="rgcn_flag_10"  # rgcn_flag_9
+model_id="rgcn_flag_10"  # rgcn_flag_4
 gpu_id=9
-icdm_sesison1_dir="/data/pengmiao/ICDM_dataset/icdm2022_session1_train/"
+#icdm_sesison1_dir="/data/pengmiao/ICDM_dataset/icdm2022_session1_train/"
+#ouput_result_dir="/data/pengmiao/workplace/pycharm/icdm_graph_competition/pyg_example/"
+#pyg_data_session1="/data/pengmiao/ICDM_dataset/pyg_data/icdm2022_session1"
+#test_ids_session1="/data/pengmiao/ICDM_dataset/icdm2022_session1_test_ids.txt"
+
+icdm_sesison2_dir="/data/liuben/icdm_dataset/session2/"
 ouput_result_dir="/data/pengmiao/workplace/pycharm/icdm_graph_competition/pyg_example/"
-pyg_data_session1="/data/pengmiao/ICDM_dataset/pyg_data/icdm2022_session1"
-test_ids_session1="/data/pengmiao/ICDM_dataset/icdm2022_session1_test_ids.txt"
+pyg_data_session2="/data/liuben/icdm_dataset/session2/icdm2022_session2"
+test_ids_session2="/data/liuben/icdm_dataset/session2/icdm2022_session2_test_ids.txt"
 
 #ouput_result_dir="/data/pengmiao/workplace/pycharm/icdm_graph_competition/pyg_example/"
 #pyg_data_session1="/data/liuben/icdm_dataset/icdm2022_session1"
@@ -63,24 +48,24 @@ batch_size=200
 #              --device-id $gpu_id
 
 # Training: session 1 (save model at best_models/$model_id.pth)
-python rgcn_flag.py --dataset $pyg_data_session1".pt" \
-               --h-dim $h_dim \
-               --n-bases $n_bases \
-               --n-layers $num_layers \
-               --fanout $fanout \
-               --n-epoch $n_epoch \
-               --early_stopping $early_stopping \
-               --validation True \
-               --lr $lr \
-               --batch-size $batch_size \
-               --model-id $model_id \
-               --device-id $gpu_id
+#python rgcn_flag.py --dataset $pyg_data_session2".pt" \
+#               --h-dim $h_dim \
+#               --n-bases $n_bases \
+#               --n-layers $num_layers \
+#               --fanout $fanout \
+#               --n-epoch $n_epoch \
+#               --early_stopping $early_stopping \
+#               --validation True \
+#               --lr $lr \
+#               --batch-size $batch_size \
+#               --model-id $model_id \
+#               --device-id $gpu_id
 
 
 # Inference: session1 1. loading model $model_id 2. reading test_ids 3. generator .json file
-python rgcn_flag.py --dataset $pyg_data_session1".pt" \
-        --test-file $test_ids_session1 \
-        --json-file $ouput_result_dir"rgcn_flag_xwj_4399_epoch9.json" \
+python rgcn_flag.py --dataset $pyg_data_session2".pt" \
+        --test-file $test_ids_session2 \
+        --json-file $ouput_result_dir"session2_rgcn_flag_xwj_4399_epoch7.json" \
         --batch-size $batch_size \
         --n-layers $num_layers \
         --fanout $fanout \

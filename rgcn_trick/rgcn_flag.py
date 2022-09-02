@@ -32,7 +32,7 @@ parser.add_argument("--in-dim", type=int, default=256,
                     help="number of hidden units")
 parser.add_argument("--n-bases", type=int, default=8,
                     help="number of filter weight matrices, default: -1 [use all]")
-parser.add_argument("--validation", type=bool, default=False)
+parser.add_argument("--validation", type=bool, default=True)
 parser.add_argument("--early_stopping", type=int, default=6)
 parser.add_argument("--n-epoch", type=int, default=1)
 parser.add_argument("--test-file", type=str, default="/data/pengmiao/ICDM_dataset/icdm2022_session1_test_ids.txt")
@@ -75,9 +75,19 @@ else:
         converted_test_id.append(hgraph['item'].maps[i])
     test_idx = torch.LongTensor(converted_test_id)
 
+
+# During Training: shuffle val_idx, keep neg sample
+new_val_idx = []
+print('begin shuffle')
+for i in range(len(val_idx)):
+    if int(hgraph[labeled_class].y[val_idx[i]]) == 1:
+        new_val_idx.append(int(val_idx[i]))
+val_idx = torch.LongTensor(new_val_idx)
+
+
 # Mini-Batch
 if args.inference == False:
-    train_loader = NeighborLoader(hgraph, input_nodes=(labeled_class, train_idx),
+    train_loader = NeighborLoader(hgraph, input_nodes=(labeled_class, torch.cat((train_idx, val_idx), dim=0)),
                                   num_neighbors={key: [args.fanout] * args.n_layers for key in hgraph.edge_types},
                                   shuffle=True, batch_size=args.batch_size)
 
@@ -155,7 +165,7 @@ def train(epoch):
         optimizer.zero_grad()
         loss_func = nn.CrossEntropyLoss()
         # define flag, params: in_feats, loss_func, optimizer
-        flag = FLAG(args.in_dim, loss_func, optimizer)
+        flag = FLAG(args.in_dim, loss_func, optimizer)  # TODO: ???放外面
 
         batch_size = batch[labeled_class].batch_size
         y = batch[labeled_class].y[:batch_size].to(device)
@@ -261,8 +271,8 @@ if args.inference == False:
         if args.validation and epoch >= args.early_stopping:
             val_loss, val_acc, val_ap = val()
             # 保存中间模型
-            # torch.save(model, osp.join("models/", args.model_id + "_epoch_{}.pth".format(epoch)))
-            if val_ap <= ave_val_ap or epoch == 11:
+            torch.save(model, osp.join("models/", args.model_id + "_epoch_{}.pth".format(epoch)))
+            if val_ap <= ave_val_ap or epoch == 9:
                 print(
                     f'Val: Epoch: {epoch:02d}, Loss: {val_loss:.4f}, Acc: {val_acc:.4f}, AP_Score: {val_ap:.4f}, Best AP: {best_ap: .4f}')
                 print("Early Stopping")
