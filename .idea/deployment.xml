@@ -1,25 +1,18 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
-  <component name="PublishConfigData" autoUpload="On explicit save action" serverName="xuwenjie@ssh.server.pmnlplab.top:61400 key (1)" remoteFilesAllowedToDisappearOnAutoupload="false" autoUploadExternalChanges="true">
+  <component name="PublishConfigData" autoUpload="On explicit save action" serverName="xuwenjie@ssh.server.pmnlplab.top:61400 key" remoteFilesAllowedToDisappearOnAutoupload="false" autoUploadExternalChanges="true">
     <serverData>
-      <paths name="amax">
-        <serverdata>
-          <mappings>
-            <mapping local="$PROJECT_DIR$" web="/" />
-          </mappings>
-        </serverdata>
-      </paths>
       <paths name="xuwenjie@ssh.server.pmnlplab.top:61400 key">
         <serverdata>
           <mappings>
-            <mapping local="$PROJECT_DIR$" web="/" />
+            <mapping deploy="/data/xuwenjie/Ali/SGHQS" local="$PROJECT_DIR$" />
           </mappings>
         </serverdata>
       </paths>
       <paths name="xuwenjie@ssh.server.pmnlplab.top:61400 key (1)">
         <serverdata>
           <mappings>
-            <mapping deploy="/data/xuwenjie/Ali/SGHQS" local="$PROJECT_DIR$" web="/" />
+            <mapping deploy="/data/xuwenjie/Ali/SGHQS" local="$PROJECT_DIR$" />
           </mappings>
         </serverdata>
       </paths>

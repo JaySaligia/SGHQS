@@ -2,13 +2,23 @@ import os
 import os.path as osp
 import torch
 import json
-
+import random
 from config import args
 from model import *
-from tqdm import tqdm
+from tqdm import tqdm, trange
 from torch_geometric.loader import NeighborLoader
 from sklearn.metrics import average_precision_score
 import numpy as np
+
+
+def set_seed(seed):
+    torch.manual_seed(seed)
+    torch.cuda.manual_seed_all(seed)
+    np.random.seed(seed)
+    random.seed(seed)
+
+
+set_seed(13)
 
 # inits
 print('-----Loading -----')
@@ -34,6 +44,7 @@ if not args.inference:
     train_idx = hgraph[labeled_class].pop('train_idx')
     if args.validation:
         val_idx = hgraph[labeled_class].pop('val_idx')
+
 else:
     test_id = [int(x) for x in open(args.test_file).readlines()]
     converted_test_id = []
@@ -41,23 +52,47 @@ else:
         converted_test_id.append(hgraph['item'].maps[i])
     test_idx = torch.LongTensor(converted_test_id)
 
+# shuffle val_idx, keep neg sample
+new_val_idx = []
+print('begin shuffle')
+for i in range(len(val_idx)):
+    if int(hgraph[labeled_class].y[val_idx[i]]) == 1:
+        new_val_idx.append(int(val_idx[i]))
+val_idx = torch.LongTensor(new_val_idx)
+
+
 # Mini-Batch
+# if not args.inference:
+#     train_loader = NeighborLoader(hgraph, input_nodes=(labeled_class, train_idx),
+#                                   num_neighbors={key: [args.fanout] * args.n_layers for key in hgraph.edge_types},
+#                                   shuffle=True, batch_size=args.batch_size)
+#
+#     if args.validation:
+#         val_loader = NeighborLoader(hgraph, input_nodes=(labeled_class, val_idx),
+#                                     num_neighbors={key: [args.fanout] * args.n_layers for key in hgraph.edge_types},
+#                                     shuffle=False, batch_size=args.batch_size)
+# else:
+#     test_loader = NeighborLoader(hgraph, input_nodes=(labeled_class, test_idx),
+#                                  num_neighbors={key: [args.fanout] * args.n_layers for key in hgraph.edge_types},
+#                                  shuffle=False, batch_size=args.batch_size)
+#
 if not args.inference:
-    train_loader = NeighborLoader(hgraph, input_nodes=(labeled_class, train_idx),
-                                  num_neighbors=[args.fanout] * args.n_layers,
+    train_loader = NeighborLoader(hgraph, input_nodes=(labeled_class, torch.cat((train_idx, val_idx), dim=0)),
+                                  num_neighbors={key: [args.fanout] * args.n_layers for key in hgraph.edge_types},
                                   shuffle=True, batch_size=args.batch_size)
 
     if args.validation:
         val_loader = NeighborLoader(hgraph, input_nodes=(labeled_class, val_idx),
-                                    num_neighbors=[args.fanout] * args.n_layers,
+                                    num_neighbors={key: [args.fanout] * args.n_layers for key in hgraph.edge_types},
                                     shuffle=False, batch_size=args.batch_size)
 else:
     test_loader = NeighborLoader(hgraph, input_nodes=(labeled_class, test_idx),
-                                 num_neighbors=[args.fanout] * args.n_layers,
+                                 num_neighbors={key: [args.fanout] * args.n_layers for key in hgraph.edge_types},
                                  shuffle=False, batch_size=args.batch_size)
 
 if args.inference:
-    model = torch.load(osp.join('best_model', args.model + ".pth"))
+    # model = torch.load(osp.join('best_model', args.model + ".pth"))
+    model = torch.load(args.store_path.format(args.model))
 else:
     model = {
         'RGCN': lambda: RGCN(in_channels=args.in_dim, hidden_channels=args.h_dim, out_channels=2,
@@ -251,9 +286,11 @@ if not args.inference:
             if val_ap <= ave_val_ap * 0.95:
                 print("Early Stopping")
                 break
-            if val_ap > best_ap:
-                torch.save(model, args.store_path.format(args.model))
-                best_ap = val_ap
+            # if val_ap > best_ap:
+            #     torch.save(model, args.store_path.format(args.model))
+            #     best_ap = val_ap
+            torch.save(model, args.store_path.format(args.model) + '.{}ep'.format(epoch))
+            best_ap = val_ap
             print(
                 f'Val: Epoch: {epoch:02d}, Loss: {val_loss:.4f}, Acc: {val_acc:.4f}, AP_Score: {val_ap:.4f}, Best AP: {best_ap: .4f}')
             val_ap_list.append(float(val_ap))
