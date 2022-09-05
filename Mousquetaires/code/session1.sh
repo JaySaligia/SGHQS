@@ -1,15 +1,12 @@
 # Parameters
 
 model_id="model_session1"
-gpu_id=9
+gpu_id=5
 session_type=1  # 1 or 2
 icdm_sesison1_dir="../data/session1/"
 pyg_data_session1="../data/session1/icdm2022_session1"
 test_ids_session1="../data/session1/icdm2022_session1_test_ids.txt"
 
-#ouput_result_dir="/data/pengmiao/workplace/pycharm/icdm_graph_competition/pyg_example/"
-#pyg_data_session1="/data/liuben/icdm_dataset/icdm2022_session1"
-#test_ids_session1="/data/pengmiao/ICDM_dataset/icdm2022_session1_test_ids.txt"
 
 # Model hyperparameters
 h_dim=256
@@ -20,7 +17,7 @@ n_epoch=100
 early_stopping=6
 lr=0.001
 batch_size=200
-best_epoch=2
+best_epoch=8
 
 # sesison1 data generator
 python format_pyg.py --graph=$icdm_sesison1_dir"icdm2022_session1_edges.csv" \
@@ -42,7 +39,7 @@ python main.py --dataset $pyg_data_session1".pt" \
                --model-id $model_id \
                --device-id $gpu_id \
                --session $session_type \
-               --best_epcoh $best_epoch
+               --best_epoch $best_epoch
 
 
 # Inference: session1 1. loading model $model_id 2. reading test_ids 3. generator .json file

@@ -1,10 +1,10 @@
 # Parameters
 
-
 model_id="model_session2"
-gpu_id=9
+gpu_id=5
 session_type=2  # 1 or 2
 icdm_sesison2_dir="../data/session2/"
+pyg_data_session1="../data/session1/icdm2022_session1"
 pyg_data_session2="../data/session2/icdm2022_session2"
 test_ids_session2="../data/session2/icdm2022_session2_test_ids.txt"
 
@@ -18,16 +18,15 @@ n_epoch=100
 early_stopping=12
 lr=0.001
 batch_size=200
-best_epoch=2
+best_epoch=7
 
 # sesison2 data generator
 python format_pyg.py --graph=$icdm_sesison2_dir"icdm2022_session2_edges.csv" \
         --node=$icdm_sesison2_dir"icdm2022_session2_nodes.csv" \
-        --label=$icdm_sesison2_dir"icdm2022_session2_train_labels.csv" \
         --storefile=$pyg_data_session2
 
 # Training: session 2 (save model at data/other/$model_id.pth)
-python main.py --dataset $pyg_data_session2".pt" \
+python main.py --dataset $pyg_data_session1".pt" \
                --h-dim $h_dim \
                --n-bases $n_bases \
                --n-layers $num_layers \

@@ -80,13 +80,12 @@ else:
     test_idx = torch.LongTensor(converted_test_id)
 
 
-# During session 2 training: union val_idx
-if args.session == 2:
-    train_idx = torch.cat((train_idx, val_idx), dim=0)
-
-
 # Mini-Batch
 if not args.inference:
+    # During session 2 training: union val_idx
+    if args.session == 2:
+        train_idx = torch.cat((train_idx, val_idx), dim=0)
+
     train_loader = NeighborLoader(hgraph, input_nodes=(labeled_class, train_idx),
                                   num_neighbors={key: [args.fanout] * args.n_layers for key in hgraph.edge_types},
                                   shuffle=True, batch_size=args.batch_size)
@@ -259,7 +258,6 @@ if not args.inference:
     val_ap_list = []
     ave_val_ap = 0
     end = 0
-    best_ap = 0
     for epoch in range(1, args.n_epoch + 1):
         train_loss, train_acc, train_ap = train(epoch)
         print(f'Train: Epoch {epoch:02d}, Loss: {train_loss:.4f}, Acc: {train_acc:.4f}, AP_Score: {train_ap:.4f}')
@@ -271,12 +269,12 @@ if not args.inference:
                 torch.save(model, osp.join("../data/other/", args.model_id + "_epoch_{}.pth".format(epoch)))
                 if val_ap <= ave_val_ap or epoch == args.best_epoch:
                     print(
-                        f'Val: Epoch: {epoch:02d}, Loss: {val_loss:.4f}, Acc: {val_acc:.4f}, AP_Score: {val_ap:.4f}, Best AP: {best_ap: .4f}')
+                        f'Val: Epoch: {epoch:02d}, Loss: {val_loss:.4f}, Acc: {val_acc:.4f}, AP_Score: {val_ap:.4f}')
                     print("Finish training, fetch best epoch, Stopping")
                     torch.save(model, osp.join("../data/other/", args.model_id + ".pth"))
                     break
                 print(
-                    f'Val: Epoch: {epoch:02d}, Loss: {val_loss:.4f}, Acc: {val_acc:.4f}, AP_Score: {val_ap:.4f}, Best AP: {best_ap: .4f}')
+                    f'Val: Epoch: {epoch:02d}, Loss: {val_loss:.4f}, Acc: {val_acc:.4f}, AP_Score: {val_ap:.4f}')
                 val_ap_list.append(float(val_ap))
                 ave_val_ap = np.average(val_ap_list)
                 end = epoch

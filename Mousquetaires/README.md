@@ -62,11 +62,11 @@
 ```shell
 conda create -n SGHQS python=3.9
 conda activate SGHQS
-pip install -r $PATH_TO_PROJRCT/requirements.txt
+pip install -r $PATH_TO_PROJECT/requirements.txt
 ```
 
 ---
-Tips: 因为无需提交session1的训练集和测试集，考虑到生成数据阶段的超参可能与官方不一致，因此生成结果可能有细微差距。
+> Tips: 因为无需提交session1的训练集和测试集，考虑到数据处理阶段的超参可能与官方不一致，因此生成结果可能有细微差距。
 运行时的超参best_epoch为我们在自己生成的数据上的最优epoch，考虑到以上问题，在官方生成的数据上可能不是最优。
 
 ### Session1
@@ -76,7 +76,7 @@ Tips: 因为无需提交session1的训练集和测试集，考虑到生成数据
 #### 1. 读取数据集，处理成pyg格式文件并保存
 
 ```shell
-cd $PATH_TO_PROJRCT/code/
+cd $PATH_TO_PROJECT/code/
 
 python format_pyg.py --graph=$icdm_sesison1_dir"icdm2022_session1_edges.csv" \
         --node=$icdm_sesison1_dir"icdm2022_session1_nodes.csv" \
@@ -85,7 +85,7 @@ python format_pyg.py --graph=$icdm_sesison1_dir"icdm2022_session1_edges.csv" \
 ```
 Output:
 
-PyG Graph放置在`$PATH_TO_PROJRCT/data/session1/`目录下
+PyG Graph放置在`$PATH_TO_PROJECT/data/session1/`目录下
 
 - icdm2022_session1.pt: 预处理后session1的Pyg格式的异质图文件
 - *.nodes.pyg: 处理过程中的临时存储文件
@@ -111,7 +111,7 @@ python main.py --dataset $pyg_data_session1".pt" \
 ```
 Output:
 
-训练好的模型权重文件放置在`$PATH_TO_PROJRCT/data/other/`目录下
+训练好的模型权重文件放置在`$PATH_TO_PROJECT/data/other/`目录下
 
 - $Model_id.pth: 模型权重文件
 
@@ -130,7 +130,7 @@ python main.py --dataset $pyg_data_session1".pt" \
 ```
 Output:
 
-最终的测试集推断结果保存在`$PATH_TO_PROJRCT/submit/`目录下
+最终的测试集推断结果保存在`$PATH_TO_PROJECT/submit/`目录下
 
 - submit_Ymd_HMS.json: 模型在测试集上的推断结果
 
@@ -142,7 +142,7 @@ Output:
 #### 1. 读取数据集，处理成pyg格式文件并保存
 
 ```shell
-cd $PATH_TO_PROJRCT/code/
+cd $PATH_TO_PROJECT/code/
 
 # sesison2 data generator
 python format_pyg.py --graph=$icdm_sesison2_dir"icdm2022_session2_edges.csv" \
@@ -152,7 +152,7 @@ python format_pyg.py --graph=$icdm_sesison2_dir"icdm2022_session2_edges.csv" \
 ```
 Output:
 
-PyG Graph放置在`$PATH_TO_PROJRCT/data/session2/`目录下
+PyG Graph放置在`$PATH_TO_PROJECT/data/session2/`目录下
 
 - icdm2022_session2.pt: 预处理后session2的Pyg格式的异质图文件
 - *.nodes.pyg: 处理过程中的临时存储文件
@@ -178,7 +178,7 @@ python main.py --dataset $pyg_data_session2".pt" \
 ```
 Output:
 
-训练好的模型权重文件放置在`$PATH_TO_PROJRCT/data/other/`目录下
+训练好的模型权重文件放置在`$PATH_TO_PROJECT/data/other/`目录下
 
 - $Model_id.pth: 模型权重文件
 
@@ -197,7 +197,7 @@ python main.py --dataset $pyg_data_session2".pt" \
 ```
 Output:
 
-最终的测试集推断结果保存在`$PATH_TO_PROJRCT/submit/`目录下
+最终的测试集推断结果保存在`$PATH_TO_PROJECT/submit/`目录下
 
 - submit_Ymd_HMS.json: 模型在测试集上的推断结果
 
