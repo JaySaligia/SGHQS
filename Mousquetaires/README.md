@@ -152,7 +152,30 @@ PyG Graph放置在`$PATH_TO_PROJRCT/data/session2/`目录下
 - icdm2022_session2.pt: 预处理后session2的Pyg格式的异质图文件
 - *.nodes.pyg: 处理过程中的临时存储文件
 
-#### 2. 推断结果
+#### 2. 训练模型
+
+```shell
+# Training: session 2 (save model at data/other/$model_id.pth)
+python main.py --dataset $pyg_data_session2".pt" \
+               --h-dim $h_dim \
+               --n-bases $n_bases \
+               --n-layers $num_layers \
+               --fanout $fanout \
+               --n-epoch $n_epoch \
+               --early_stopping $early_stopping \
+               --validation True \
+               --lr $lr \
+               --batch-size $batch_size \
+               --model-id $model_id \
+               --device-id $gpu_id
+```
+Output:
+
+训练好的模型权重文件放置在`$PATH_TO_PROJRCT/data/other/`目录下
+
+- $Model_id.pth: 模型权重文件
+
+#### 3. 推断结果
 
 ```shell
 # Inference: session2 1. loading model $model_id 2. reading test_ids 3. generator .json file

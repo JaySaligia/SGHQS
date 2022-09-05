@@ -44,6 +44,7 @@ parser.add_argument("--inference", type=bool, default=False)
 parser.add_argument("--lr", type=float, default=0.01)
 parser.add_argument("--model-id", type=str, default="rgcn_flag_2")
 parser.add_argument("--device-id", type=str, default="5")
+parser.add_argument("--session", type=int, default=1, help="which session to run")
 
 args = parser.parse_args()
 
@@ -79,11 +80,12 @@ else:
 
 
 # During Training: shuffle val_idx
-new_val_idx = []
-for i in range(len(val_idx)):
-    if int(hgraph[labeled_class].y[val_idx[i]]) == 1:
-        new_val_idx.append(int(val_idx[i]))
-val_idx = torch.LongTensor(new_val_idx)
+if args.session == 2:
+    new_val_idx = []
+    for i in range(len(val_idx)):
+        if int(hgraph[labeled_class].y[val_idx[i]]) == 1:
+            new_val_idx.append(int(val_idx[i]))
+    val_idx = torch.LongTensor(new_val_idx)
 
 
 # Mini-Batch
@@ -266,18 +268,18 @@ if not args.inference:
         print(f'Train: Epoch {epoch:02d}, Loss: {train_loss:.4f}, Acc: {train_acc:.4f}, AP_Score: {train_ap:.4f}')
         if args.validation and epoch >= args.early_stopping:
             val_loss, val_acc, val_ap = val()
-            # # Save model of each epoch
-            # torch.save(model, osp.join("../data/other/", args.model_id + "_epoch_{}.pth".format(epoch)))
+            # Save model of each epoch
+            torch.save(model, osp.join("../data/other/", args.model_id + "_epoch_{}.pth".format(epoch)))
             if val_ap <= ave_val_ap or epoch == 9:
-                # print(
-                #     f'Val: Epoch: {epoch:02d}, Loss: {val_loss:.4f}, Acc: {val_acc:.4f}, AP_Score: {val_ap:.4f}, Best AP: {best_ap: .4f}')
+                print(
+                    f'Val: Epoch: {epoch:02d}, Loss: {val_loss:.4f}, Acc: {val_acc:.4f}, AP_Score: {val_ap:.4f}, Best AP: {best_ap: .4f}')
                 print("Early Stopping")
                 break
             if val_ap > best_ap:
                 torch.save(model, osp.join("../data/other/", args.model_id + ".pth"))
                 best_ap = val_ap
-            # print(
-            #     f'Val: Epoch: {epoch:02d}, Loss: {val_loss:.4f}, Acc: {val_acc:.4f}, AP_Score: {val_ap:.4f}, Best AP: {best_ap: .4f}')
+            print(
+                f'Val: Epoch: {epoch:02d}, Loss: {val_loss:.4f}, Acc: {val_acc:.4f}, AP_Score: {val_ap:.4f}, Best AP: {best_ap: .4f}')
             val_ap_list.append(float(val_ap))
             ave_val_ap = np.average(val_ap_list)
             end = epoch

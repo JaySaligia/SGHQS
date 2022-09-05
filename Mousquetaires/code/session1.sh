@@ -1,7 +1,8 @@
 # Parameters
 
-model_id="model_1"
+model_id="model_session1"
 gpu_id=9
+session_type=1  # 1 or 2
 icdm_sesison1_dir="../data/session1/"
 pyg_data_session1="../data/session1/icdm2022_session1"
 test_ids_session1="../data/session1/icdm2022_session1_test_ids.txt"
@@ -38,7 +39,8 @@ python main.py --dataset $pyg_data_session1".pt" \
                --lr $lr \
                --batch-size $batch_size \
                --model-id $model_id \
-               --device-id $gpu_id
+               --device-id $gpu_id \
+               --session $session_type
 
 
 # Inference: session1 1. loading model $model_id 2. reading test_ids 3. generator .json file
@@ -49,5 +51,6 @@ python main.py --dataset $pyg_data_session1".pt" \
         --fanout $fanout \
         --inference True \
         --model-id $model_id \
-        --device-id $gpu_id
+        --device-id $gpu_id \
+        --session $session_type
 
