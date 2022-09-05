@@ -45,6 +45,7 @@ parser.add_argument("--lr", type=float, default=0.01)
 parser.add_argument("--model-id", type=str, default="rgcn_flag_2")
 parser.add_argument("--device-id", type=str, default="5")
 parser.add_argument("--session", type=int, default=1, help="which session to run")
+parser.add_argument("--best_epoch", type=int, default=1, help="best epoch chose")
 
 args = parser.parse_args()
 
@@ -79,18 +80,14 @@ else:
     test_idx = torch.LongTensor(converted_test_id)
 
 
-# During Training: shuffle val_idx
+# During session 2 training: union val_idx
 if args.session == 2:
-    new_val_idx = []
-    for i in range(len(val_idx)):
-        if int(hgraph[labeled_class].y[val_idx[i]]) == 1:
-            new_val_idx.append(int(val_idx[i]))
-    val_idx = torch.LongTensor(new_val_idx)
+    train_idx = torch.cat((train_idx, val_idx), dim=0)
 
 
 # Mini-Batch
 if not args.inference:
-    train_loader = NeighborLoader(hgraph, input_nodes=(labeled_class, torch.cat((train_idx, val_idx), dim=0)),
+    train_loader = NeighborLoader(hgraph, input_nodes=(labeled_class, train_idx),
                                   num_neighbors={key: [args.fanout] * args.n_layers for key in hgraph.edge_types},
                                   shuffle=True, batch_size=args.batch_size)
 
@@ -266,23 +263,29 @@ if not args.inference:
     for epoch in range(1, args.n_epoch + 1):
         train_loss, train_acc, train_ap = train(epoch)
         print(f'Train: Epoch {epoch:02d}, Loss: {train_loss:.4f}, Acc: {train_acc:.4f}, AP_Score: {train_ap:.4f}')
-        if args.validation and epoch >= args.early_stopping:
-            val_loss, val_acc, val_ap = val()
-            # Save model of each epoch
-            torch.save(model, osp.join("../data/other/", args.model_id + "_epoch_{}.pth".format(epoch)))
-            if val_ap <= ave_val_ap or epoch == 9:
+        # session 1
+        if args.session == 1:
+            if args.validation and epoch >= args.early_stopping:
+                val_loss, val_acc, val_ap = val()
+                # Save model of each epoch
+                torch.save(model, osp.join("../data/other/", args.model_id + "_epoch_{}.pth".format(epoch)))
+                if val_ap <= ave_val_ap or epoch == args.best_epoch:
+                    print(
+                        f'Val: Epoch: {epoch:02d}, Loss: {val_loss:.4f}, Acc: {val_acc:.4f}, AP_Score: {val_ap:.4f}, Best AP: {best_ap: .4f}')
+                    print("Finish training, fetch best epoch, Stopping")
+                    torch.save(model, osp.join("../data/other/", args.model_id + ".pth"))
+                    break
                 print(
                     f'Val: Epoch: {epoch:02d}, Loss: {val_loss:.4f}, Acc: {val_acc:.4f}, AP_Score: {val_ap:.4f}, Best AP: {best_ap: .4f}')
-                print("Early Stopping")
-                break
-            if val_ap > best_ap:
+                val_ap_list.append(float(val_ap))
+                ave_val_ap = np.average(val_ap_list)
+                end = epoch
+        # session 2
+        else:
+            torch.save(model, osp.join("../data/other/", args.model_id + "_epoch_{}.pth".format(epoch)))
+            if epoch >= args.best_epoch:
                 torch.save(model, osp.join("../data/other/", args.model_id + ".pth"))
-                best_ap = val_ap
-            print(
-                f'Val: Epoch: {epoch:02d}, Loss: {val_loss:.4f}, Acc: {val_acc:.4f}, AP_Score: {val_ap:.4f}, Best AP: {best_ap: .4f}')
-            val_ap_list.append(float(val_ap))
-            ave_val_ap = np.average(val_ap_list)
-            end = epoch
+            print("Finish training, fetch best epoch, Stopping")
     print(f"Complete Training (Model id: {args.model_id})")
 
 

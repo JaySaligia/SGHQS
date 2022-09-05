@@ -66,6 +66,9 @@ pip install -r $PATH_TO_PROJRCT/requirements.txt
 ```
 
 ---
+Tips: 因为无需提交session1的训练集和测试集，考虑到生成数据阶段的超参可能与官方不一致，因此生成结果可能有细微差距。
+运行时的超参best_epoch为我们在自己生成的数据上的最优epoch，考虑到以上问题，在官方生成的数据上可能不是最优。
+
 ### Session1
 
 运行session1.sh文件：
@@ -102,7 +105,9 @@ python main.py --dataset $pyg_data_session1".pt" \
                --lr $lr \
                --batch-size $batch_size \
                --model-id $model_id \
-               --device-id $gpu_id
+               --device-id $gpu_id \
+               --session $session_type \
+               --best_epcoh $best_epoch
 ```
 Output:
 
@@ -167,7 +172,9 @@ python main.py --dataset $pyg_data_session2".pt" \
                --lr $lr \
                --batch-size $batch_size \
                --model-id $model_id \
-               --device-id $gpu_id
+               --device-id $gpu_id \
+               --session $session_type \
+               --best_epcoh $best_epoch
 ```
 Output:
 

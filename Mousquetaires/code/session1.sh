@@ -20,6 +20,7 @@ n_epoch=100
 early_stopping=6
 lr=0.001
 batch_size=200
+best_epoch=2
 
 # sesison1 data generator
 python format_pyg.py --graph=$icdm_sesison1_dir"icdm2022_session1_edges.csv" \
@@ -40,7 +41,8 @@ python main.py --dataset $pyg_data_session1".pt" \
                --batch-size $batch_size \
                --model-id $model_id \
                --device-id $gpu_id \
-               --session $session_type
+               --session $session_type \
+               --best_epcoh $best_epoch
 
 
 # Inference: session1 1. loading model $model_id 2. reading test_ids 3. generator .json file
@@ -51,6 +53,5 @@ python main.py --dataset $pyg_data_session1".pt" \
         --fanout $fanout \
         --inference True \
         --model-id $model_id \
-        --device-id $gpu_id \
-        --session $session_type
+        --device-id $gpu_id
 

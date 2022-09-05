@@ -21,8 +21,8 @@
 # score 0.934026
 #######
 
-model_id="rgcn_flag_10"  # rgcn_flag_9
-gpu_id=9
+model_id="rgcn_sample"
+gpu_id=1
 icdm_sesison1_dir="/data/pengmiao/ICDM_dataset/icdm2022_session1_train/"
 ouput_result_dir="/data/pengmiao/workplace/pycharm/icdm_graph_competition/pyg_example/"
 pyg_data_session1="/data/pengmiao/ICDM_dataset/pyg_data/icdm2022_session1"
@@ -37,11 +37,12 @@ h_dim=256
 n_bases=8
 num_layers=3
 fanout=150  # 150
-n_epoch=100
+n_epoch=10
 early_stopping=6
 lr=0.001
 batch_size=200
-
+sample=True
+flag_use=False
 
 # sesison1 data generator
 #python format_pyg.py --graph=$icdm_sesison1_dir"icdm2022_session1_edges.csv" \
@@ -75,7 +76,9 @@ python rgcn_flag.py --dataset $pyg_data_session1".pt" \
                --lr $lr \
                --batch-size $batch_size \
                --model-id $model_id \
-               --device-id $gpu_id
+               --device-id $gpu_id \
+               --sample $sample \
+               --flag_use $flag_use
 
 
 # Inference: session1 1. loading model $model_id 2. reading test_ids 3. generator .json file
@@ -87,5 +90,6 @@ python rgcn_flag.py --dataset $pyg_data_session1".pt" \
         --fanout $fanout \
         --inference True \
         --model-id $model_id \
-        --device-id $gpu_id
-
+        --device-id $gpu_id \
+        --sample $sample \
+        --flag_use $flag_use

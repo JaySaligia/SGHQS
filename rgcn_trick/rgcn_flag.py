@@ -42,6 +42,9 @@ parser.add_argument("--inference", type=bool, default=False)
 parser.add_argument("--lr", type=float, default=0.01)
 parser.add_argument("--model-id", type=str, default="rgcn_flag_2")
 parser.add_argument("--device-id", type=str, default="5")
+# ablation
+parser.add_argument("--sample", type=bool, default=False)
+parser.add_argument("--flag_use", type=bool, default=False)
 
 args = parser.parse_args()
 
@@ -77,28 +80,43 @@ else:
 
 
 # During Training: shuffle val_idx, keep neg sample
-new_val_idx = []
-print('begin shuffle')
-for i in range(len(val_idx)):
-    if int(hgraph[labeled_class].y[val_idx[i]]) == 1:
-        new_val_idx.append(int(val_idx[i]))
-val_idx = torch.LongTensor(new_val_idx)
+# new_val_idx = []
+# print('begin shuffle')
+# for i in range(len(val_idx)):
+#     if int(hgraph[labeled_class].y[val_idx[i]]) == 1:
+#         new_val_idx.append(int(val_idx[i]))
+# val_idx = torch.LongTensor(new_val_idx)
 
 
 # Mini-Batch
-if args.inference == False:
-    train_loader = NeighborLoader(hgraph, input_nodes=(labeled_class, torch.cat((train_idx, val_idx), dim=0)),
-                                  num_neighbors={key: [args.fanout] * args.n_layers for key in hgraph.edge_types},
-                                  shuffle=True, batch_size=args.batch_size)
+if args.sample:
+    if not args.inference:
+        train_loader = NeighborLoader(hgraph, input_nodes=(labeled_class, train_idx),
+                                      num_neighbors={key: [args.fanout] * args.n_layers for key in hgraph.edge_types},
+                                      shuffle=True, batch_size=args.batch_size)
 
-    if args.validation:
-        val_loader = NeighborLoader(hgraph, input_nodes=(labeled_class, val_idx),
-                                    num_neighbors={key: [args.fanout] * args.n_layers for key in hgraph.edge_types},
-                                    shuffle=False, batch_size=args.batch_size)
+        if args.validation:
+            val_loader = NeighborLoader(hgraph, input_nodes=(labeled_class, val_idx),
+                                        num_neighbors={key: [args.fanout] * args.n_layers for key in hgraph.edge_types},
+                                        shuffle=False, batch_size=args.batch_size)
+    else:
+        test_loader = NeighborLoader(hgraph, input_nodes=(labeled_class, test_idx),
+                                     num_neighbors={key: [args.fanout] * args.n_layers for key in hgraph.edge_types},
+                                     shuffle=False, batch_size=args.batch_size)
 else:
-    test_loader = NeighborLoader(hgraph, input_nodes=(labeled_class, test_idx),
-                                 num_neighbors={key: [args.fanout] * args.n_layers for key in hgraph.edge_types},
-                                 shuffle=False, batch_size=args.batch_size)
+    if not args.inference:
+        train_loader = NeighborLoader(hgraph, input_nodes=(labeled_class, train_idx),
+                                      num_neighbors=[args.fanout] * args.n_layers,
+                                      shuffle=True, batch_size=args.batch_size)
+
+        if args.validation:
+            val_loader = NeighborLoader(hgraph, input_nodes=(labeled_class, val_idx),
+                                        num_neighbors=[args.fanout] * args.n_layers,
+                                        shuffle=False, batch_size=args.batch_size)
+    else:
+        test_loader = NeighborLoader(hgraph, input_nodes=(labeled_class, test_idx),
+                                     num_neighbors=[args.fanout] * args.n_layers,
+                                     shuffle=False, batch_size=args.batch_size)
 
 # # No need to maintain these features during evaluation:
 # # Add global node index information.
@@ -165,7 +183,8 @@ def train(epoch):
         optimizer.zero_grad()
         loss_func = nn.CrossEntropyLoss()
         # define flag, params: in_feats, loss_func, optimizer
-        flag = FLAG(args.in_dim, loss_func, optimizer)  # TODO: ???放外面
+        if args.flag_use:
+            flag = FLAG(args.in_dim, loss_func, optimizer)
 
         batch_size = batch[labeled_class].batch_size
         y = batch[labeled_class].y[:batch_size].to(device)
@@ -178,23 +197,32 @@ def train(epoch):
 
         batch = batch.to_homogeneous()
         # batch = transform(batch)
-
-        # define a forward func to get the output of the model
-        y_hat = lambda perturb: model(batch.x.to(device), batch.edge_index.to(device), batch.edge_type.to(device), perturb)[
-                start:start + batch_size]
-
         # run flag to get loss and output
-        loss, out = flag(model, y_hat, batch.x.shape[0], y)
-        loss = loss.item()
-        # loss = F.cross_entropy(y_hat, y)
-        # loss.backward()
-        # optimizer.step()
-        y_pred.append(F.softmax(out, dim=1)[:, 1].detach().cpu())
-        y_true.append(y.cpu())
-        total_loss += float(loss) * batch_size
-        total_correct += int((out.argmax(dim=-1) == y).sum())
-        total_examples += batch_size
-        pbar.update(batch_size)
+        if args.flag_use:
+            # define a forward func to get the output of the model
+            y_hat = lambda perturb: model(batch.x.to(device), batch.edge_index.to(device), batch.edge_type.to(device), perturb)[start:start + batch_size]
+            loss, out = flag(model, y_hat, batch.x.shape[0], y)
+            loss = loss.item()
+            # loss = F.cross_entropy(y_hat, y)
+            # loss.backward()
+            # optimizer.step()
+            y_pred.append(F.softmax(out, dim=1)[:, 1].detach().cpu())
+            y_true.append(y.cpu())
+            total_loss += float(loss) * batch_size
+            total_correct += int((out.argmax(dim=-1) == y).sum())
+            total_examples += batch_size
+            pbar.update(batch_size)
+        else:
+            y_hat = model(batch.x.to(device), batch.edge_index.to(device), batch.edge_type.to(device))[
+                    start:start + batch_size]
+            loss = F.cross_entropy(y_hat, y)
+            y_pred.append(F.softmax(y_hat, dim=1)[:, 1].detach().cpu())
+            y_true.append(y.cpu())
+            total_loss += float(loss) * batch_size
+            total_correct += int((y_hat.argmax(dim=-1) == y).sum())
+            total_examples += batch_size
+            pbar.update(batch_size)
+
     pbar.close()
     ap_score = average_precision_score(torch.hstack(y_true).numpy(), torch.hstack(y_pred).numpy())
 
@@ -259,7 +287,7 @@ def test():
     return torch.hstack(y_pred)
 
 
-if args.inference == False:
+if not args.inference:
     print("Start training")
     val_ap_list = []
     ave_val_ap = 0
@@ -291,7 +319,7 @@ if args.inference == False:
 #        f.write(f"{args.model_id:2d} {args.h_dim:3d} {args.n_layers:2d} {args.lr:.4f} {end:02d} {float(val_ap_list[-1]):.4f} {np.argmax(val_ap_list)+5:02d} {float(np.max(val_ap_list)):.4f}\n")
 
 
-if args.inference == True:
+if args.inference:
     y_pred = test()
     with open(args.json_file, 'w+') as f:
         for i in range(len(test_id)):
