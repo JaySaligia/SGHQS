@@ -277,8 +277,8 @@ if args.inference == False:
             if val_ap > best_ap:
                 torch.save(model, osp.join("../data/other/", args.model_id + ".pth"))
                 best_ap = val_ap
-            print(
-                f'Val: Epoch: {epoch:02d}, Loss: {val_loss:.4f}, Acc: {val_acc:.4f}, AP_Score: {val_ap:.4f}, Best AP: {best_ap: .4f}')
+            # print(
+            #     f'Val: Epoch: {epoch:02d}, Loss: {val_loss:.4f}, Acc: {val_acc:.4f}, AP_Score: {val_ap:.4f}, Best AP: {best_ap: .4f}')
             val_ap_list.append(float(val_ap))
             ave_val_ap = np.average(val_ap_list)
             end = epoch

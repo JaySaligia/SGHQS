@@ -1,6 +1,6 @@
 # Parameters
 
-model_id="rgcn_flag_10"  # rgcn_flag_4
+model_id="model_1"
 gpu_id=9
 icdm_sesison1_dir="../data/session1/"
 pyg_data_session1="../data/session1/icdm2022_session1"

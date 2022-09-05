@@ -8,6 +8,33 @@
 
 ## 方法介绍
 
+我们团队所提出的方法主要分为三个部分：
+### 基于关系类型的子图采样器
+由于电商图是一个极度类别平衡的大规模异质图，考虑到商品图的schema，商品之间的拓扑关联较为稀疏且为了适应测试阶段的inductive设定，因此采用基于one-hop关系类型的采样方式。 
+
+具体对于一个target节点，为了保证节点的邻域信息均衡，我们对其每种关系类型的邻域有放回的采样相同数目的节点，然后迭代K次以获得一个子图。
+### R-GCN编码器
+采用R-GCN编码器作为节点的聚合器，具体的在聚合邻居节点的信息时按照边的类型进行分类，根据边类型的不同进行相应的转换，其中每个节点的信息更新共享参数，并行计算。
+### 基于梯度扰动的对抗训练策略
+为了更好的适应存在噪声数据的真实场景，避免由于小的噪声导致检测失败，考虑通过基于特征的数据增强方法来提高模型的鲁棒性。受到FLAG启发，对抗扰动被认为是一种数据依赖的正则化，有助于推广到分布外样本，同时考虑到标签节点样本的稀缺性，我们采用对抗扰动策略作为输入特征增强的方法。
+
+
+### 仓库目录
+```markdown
+├── code
+│   ├── flag.py        -- Free Large-scale Adversarial Augmentation on Graphs
+│   ├── format_pyg.py  -- Pyg数据预处理代码
+│   ├── main.py        -- 模型运行文件
+│   ├── session1.sh    -- Session1运行命令及参数配置
+│   ├── session2.sh    -- Session2运行命令及参数配置
+├── data
+│   ├── other          -- 中间件结果存放的目录
+│   ├── session1       -- Session1数据集文件目录
+│   ├── session2       -- Session2数据集文件目录
+├── submit             -- 结果json文件保存目录
+├── README.md
+├── requirements.txt
+```
 
 ## 环境依赖
 
@@ -20,14 +47,13 @@
 ### Python Packages
 - Python 3.9.0
 - Numpy 1.22.4
-- Pandas 1.4.3
 - Pytorch 1.11.0
   - torch-cluster 1.6.0 
   - torch-geometric 2.0.4
   - torch-scatter 2.0.9 
   - torch-sparse 0.6.14
-- NetworkX 2.8.5
 - Scikit-learn 1.1.1
+- tqdm 4.64.0
 
 ## 运行方法
 
