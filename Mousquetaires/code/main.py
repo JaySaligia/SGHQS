@@ -66,7 +66,7 @@ hgraph = torch.load(args.dataset)
 
 labeled_class = args.labeled_class
 
-if args.inference == False:
+if not args.inference:
     train_idx = hgraph[labeled_class].pop('train_idx')
     if args.validation:
         val_idx = hgraph[labeled_class].pop('val_idx')
@@ -78,9 +78,8 @@ else:
     test_idx = torch.LongTensor(converted_test_id)
 
 
-# During Training: shuffle val_idx, keep neg sample
+# During Training: shuffle val_idx
 new_val_idx = []
-print('begin shuffle')
 for i in range(len(val_idx)):
     if int(hgraph[labeled_class].y[val_idx[i]]) == 1:
         new_val_idx.append(int(val_idx[i]))
@@ -88,7 +87,7 @@ val_idx = torch.LongTensor(new_val_idx)
 
 
 # Mini-Batch
-if args.inference == False:
+if not args.inference:
     train_loader = NeighborLoader(hgraph, input_nodes=(labeled_class, torch.cat((train_idx, val_idx), dim=0)),
                                   num_neighbors={key: [args.fanout] * args.n_layers for key in hgraph.edge_types},
                                   shuffle=True, batch_size=args.batch_size)
@@ -256,7 +255,7 @@ def test():
     return torch.hstack(y_pred)
 
 
-if args.inference == False:
+if not args.inference:
     print("Start training")
     val_ap_list = []
     ave_val_ap = 0
@@ -270,8 +269,8 @@ if args.inference == False:
             # # Save model of each epoch
             # torch.save(model, osp.join("../data/other/", args.model_id + "_epoch_{}.pth".format(epoch)))
             if val_ap <= ave_val_ap or epoch == 9:
-                print(
-                    f'Val: Epoch: {epoch:02d}, Loss: {val_loss:.4f}, Acc: {val_acc:.4f}, AP_Score: {val_ap:.4f}, Best AP: {best_ap: .4f}')
+                # print(
+                #     f'Val: Epoch: {epoch:02d}, Loss: {val_loss:.4f}, Acc: {val_acc:.4f}, AP_Score: {val_ap:.4f}, Best AP: {best_ap: .4f}')
                 print("Early Stopping")
                 break
             if val_ap > best_ap:
@@ -285,7 +284,7 @@ if args.inference == False:
     print(f"Complete Training (Model id: {args.model_id})")
 
 
-if args.inference == True:
+if args.inference:
     y_pred = test()
     out_file_path = "../submit/submit_" + datetime.datetime.now().strftime('%Y%m%d_%H%M%S') + ".json"
     with open(out_file_path, 'w+') as f:
